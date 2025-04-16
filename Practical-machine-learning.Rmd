@@ -1,0 +1,51 @@
+---
+title: "Practical Machine Learning Project"
+author: "Rahma A"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(caret)
+library(randomForest)
+library(dplyr)
+```
+
+```{r load-data}
+train_url <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+test_url <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+
+training <- read.csv(train_url, na.strings = c("NA", "#DIV/0!", ""))
+testing <- read.csv(test_url, na.strings = c("NA", "#DIV/0!", ""))
+
+training <- training[, colMeans(!is.na(training)) > 0.95]
+testing <- testing[, colMeans(!is.na(testing)) > 0.95]
+
+training <- training[, -(1:5)]
+testing <- testing[, -(1:5)]
+```
+
+```{r partition}
+set.seed(1234)
+inTrain <- createDataPartition(training$classe, p = 0.7, list = FALSE)
+trainSet <- training[inTrain, ]
+testSet <- training[-inTrain, ]
+```
+
+```{r model-training}
+model_rf <- train(classe ~ ., data = trainSet, method = "rf", trControl = trainControl(method = "cv", number = 5))
+```
+
+```{r model-evaluation}
+predictions <- predict(model_rf, testSet)
+confusionMatrix(predictions, testSet$classe)
+```
+
+```{r apply-model}
+final_predictions <- predict(model_rf, testing)
+final_predictions
+```
+
+```{r conclusion, echo=FALSE}
+cat("In this project, we used a Random Forest model to classify the manner in which participants performed exercises. After cleaning the data and applying cross-validation, we achieved high accuracy. This approach can be applied to sensor-based monitoring in health or sports training.")
+```
